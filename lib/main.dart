@@ -374,18 +374,6 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       backgroundColor: colorScheme.surface,
       elevation: 0,
-      actions: [
-        // Clear current conversation button
-        IconButton(
-          icon: const Icon(Icons.delete_outline),
-          onPressed: () => ChatWidgets.showClearChatDialog(
-            context,
-            colorScheme,
-            _clearCurrentConversation,
-          ),
-          tooltip: 'Clear current conversation',
-        ),
-      ],
     );
   }
 
@@ -413,11 +401,7 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.chat_bubble_outline,
-                  size: 48,
-                  color: colorScheme.primary,
-                ),
+                Icon(Icons.auto_awesome, size: 48, color: colorScheme.primary),
                 const SizedBox(height: 12),
                 Text(
                   'AskPitra',
@@ -654,7 +638,7 @@ class _MyHomePageState extends State<MyHomePage> {
       applicationName: 'AskPitra',
       applicationVersion: '1.0.0',
       applicationIcon: Icon(
-        Icons.chat_bubble_outline,
+        Icons.auto_awesome,
         size: 48,
         color: colorScheme.primary,
       ),

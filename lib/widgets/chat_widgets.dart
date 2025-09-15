@@ -160,7 +160,7 @@ class ChatWidgets {
       color: colorScheme.surface,
       child: SafeArea(
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
+          margin: const EdgeInsets.symmetric(horizontal: 1),
           decoration: BoxDecoration(
             color: colorScheme.surfaceVariant,
             borderRadius: BorderRadius.circular(24),
@@ -188,7 +188,7 @@ class ChatWidgets {
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 10,
+                      vertical: 20,
                     ),
                   ),
                   onSubmitted: onSubmit,
