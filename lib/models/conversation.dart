@@ -15,7 +15,6 @@ class Conversation {
     required this.updatedAt,
   });
 
-  /// Create a copy of the conversation with updated fields
   Conversation copyWith({
     String? id,
     String? title,

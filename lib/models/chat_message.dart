@@ -166,7 +166,7 @@ class ChatMessage extends StatelessWidget {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: const Text('Message copied to clipboard'),
+                          content: const Text('Pesan Berhasil disalin'),
                           backgroundColor: colorScheme.primaryContainer,
                           behavior: SnackBarBehavior.floating,
                           margin: const EdgeInsets.all(16),

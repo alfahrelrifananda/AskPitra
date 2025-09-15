@@ -171,18 +171,15 @@ Penerimaan Mahasiswa Baru UPITRA:
     'filosofi',
   ];
 
-  /// Searches for relevant knowledge based on the query
   static String? searchKnowledge(String query) {
     String lowerQuery = query.toLowerCase();
 
-    // Direct keyword match
     for (String key in _knowledge.keys) {
       if (lowerQuery.contains(key.replaceAll('_', ' '))) {
         return _knowledge[key];
       }
     }
 
-    // Specific keyword search with priority
     if (lowerQuery.contains('visi') || lowerQuery.contains('misi')) {
       return _knowledge['visi_misi'];
     }
@@ -225,10 +222,8 @@ Penerimaan Mahasiswa Baru UPITRA:
       return _knowledge['tri_dharma'];
     }
 
-    // General keyword search
     for (String keyword in _keywords) {
       if (lowerQuery.contains(keyword)) {
-        // Return most relevant knowledge based on context
         if (keyword.contains('upitra') || keyword.contains('universitas')) {
           return _knowledge['upitra'];
         } else if (keyword.contains('link and match')) {
@@ -246,22 +241,18 @@ Penerimaan Mahasiswa Baru UPITRA:
     return null;
   }
 
-  /// Enhanced prompt enhancement with better context selection
   static String enhancePromptWithKnowledge(String userInput) {
     String? primaryKnowledge = searchKnowledge(userInput);
 
     if (primaryKnowledge != null) {
-      // Add additional context based on query type
       String additionalContext = '';
       String lowerInput = userInput.toLowerCase();
 
-      // Add basic UPITRA info if not already included
       if (!primaryKnowledge.contains('Universitas Pignatelli Triputra') &&
           primaryKnowledge != _knowledge['upitra']) {
         additionalContext += '\n\nInformasi Dasar: ${_knowledge['upitra']}';
       }
 
-      // Add program studi info for academic-related queries
       if ((lowerInput.contains('kuliah') ||
               lowerInput.contains('jurusan') ||
               lowerInput.contains('program')) &&
@@ -282,16 +273,12 @@ Jawablah berdasarkan konteks yang diberikan tentang UPITRA (Universitas Pignatel
     return userInput;
   }
 
-  /// Gets all available keywords for debugging/testing
   static List<String> getKeywords() => List.unmodifiable(_keywords);
 
-  /// Gets all knowledge keys for debugging/testing
   static List<String> getKnowledgeKeys() => List.unmodifiable(_knowledge.keys);
 
-  /// Gets specific knowledge by key
   static String? getKnowledgeByKey(String key) => _knowledge[key];
 
-  /// Search knowledge with multiple results
   static List<String> searchMultipleKnowledge(String query) {
     List<String> results = [];
     String lowerQuery = query.toLowerCase();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'models/chat_message.dart';
 import 'models/conversation.dart';
 import 'services/ai_service.dart';
@@ -33,7 +34,6 @@ class _MyAppState extends State<MyApp> {
     _loadThemePreference();
   }
 
-  /// Loads saved theme preference from storage
   Future<void> _loadThemePreference() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -41,7 +41,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  /// Saves theme preference to storage
   Future<void> _saveThemePreference(bool isDarkMode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', isDarkMode);
@@ -56,29 +55,38 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'AskPitra',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
-      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: MyHomePage(
-        title: 'AskPitra',
-        isDarkMode: _isDarkMode,
-        onThemeToggle: _toggleTheme,
-      ),
+    return DynamicColorBuilder(
+      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        ColorScheme lightScheme;
+        ColorScheme darkScheme;
+
+        if (lightDynamic != null && darkDynamic != null) {
+          lightScheme = lightDynamic.harmonized();
+          darkScheme = darkDynamic.harmonized();
+        } else {
+          lightScheme = ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.light,
+          );
+          darkScheme = ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.dark,
+          );
+        }
+
+        return MaterialApp(
+          title: 'AskPitra',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(colorScheme: lightScheme, useMaterial3: true),
+          darkTheme: ThemeData(colorScheme: darkScheme, useMaterial3: true),
+          themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          home: MyHomePage(
+            title: 'AskPitra',
+            isDarkMode: _isDarkMode,
+            onThemeToggle: _toggleTheme,
+          ),
+        );
+      },
     );
   }
 }
@@ -105,7 +113,6 @@ class _MyHomePageState extends State<MyHomePage> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
 
-  // Conversation management
   List<Conversation> _conversations = [];
   Conversation? _currentConversation;
   int _selectedDrawerIndex = 0;
@@ -130,7 +137,6 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  /// Loads all conversations from storage
   Future<void> _loadConversations() async {
     final conversations = await StorageService.loadConversations();
     setState(() {
@@ -138,12 +144,11 @@ class _MyHomePageState extends State<MyHomePage> {
       if (_conversations.isNotEmpty) {
         _currentConversation = _conversations.first;
         _messages.clear();
-        _messages.addAll(_currentConversation!.messages);
+        _messages.addAll(_currentConversation!.messages.reversed);
       }
     });
   }
 
-  /// Creates a new conversation
   Future<void> _createNewConversation() async {
     final newConversation = Conversation(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -162,26 +167,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
     await StorageService.saveConversations(_conversations);
 
-    // Close drawer if open
     if (Navigator.canPop(context)) {
       Navigator.pop(context);
     }
   }
 
-  /// Switches to a different conversation
   Future<void> _switchConversation(Conversation conversation) async {
     setState(() {
       _currentConversation = conversation;
       _messages.clear();
-      _messages.addAll(conversation.messages);
+      _messages.addAll(conversation.messages.reversed);
       _selectedDrawerIndex = 0;
     });
 
-    // Close drawer
     Navigator.pop(context);
   }
 
-  /// Deletes a conversation
   Future<void> _deleteConversation(Conversation conversation) async {
     setState(() {
       _conversations.remove(conversation);
@@ -190,7 +191,7 @@ class _MyHomePageState extends State<MyHomePage> {
         if (_conversations.isNotEmpty) {
           _currentConversation = _conversations.first;
           _messages.clear();
-          _messages.addAll(_currentConversation!.messages);
+          _messages.addAll(_currentConversation!.messages.reversed);
         } else {
           _currentConversation = null;
           _messages.clear();
@@ -201,7 +202,6 @@ class _MyHomePageState extends State<MyHomePage> {
     await StorageService.saveConversations(_conversations);
   }
 
-  /// Updates conversation title based on first message
   void _updateConversationTitle(String firstMessage) {
     if (_currentConversation != null &&
         _currentConversation!.title == 'Obrolan Baru') {
@@ -216,7 +216,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  /// Saves current conversation
   Future<void> _saveCurrentConversation() async {
     if (_currentConversation != null) {
       _currentConversation!.messages = List.from(_messages.reversed);
@@ -233,11 +232,9 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  /// Handles message submission
   void _handleSubmitted(String text) async {
     if (text.trim().isEmpty) return;
 
-    // Create new conversation if none exists
     if (_currentConversation == null) {
       await _createNewConversation();
     }
@@ -248,7 +245,6 @@ class _MyHomePageState extends State<MyHomePage> {
       _isLoading = true;
     });
 
-    // Update conversation title if it's the first message
     if (_messages.length == 1) {
       _updateConversationTitle(text);
     }
@@ -259,7 +255,6 @@ class _MyHomePageState extends State<MyHomePage> {
     _generateAIResponse(text);
   }
 
-  /// Generates AI response
   Future<void> _generateAIResponse(String userInput) async {
     try {
       final aiResponse = await AIService.generateResponse(userInput, _messages);
@@ -268,7 +263,6 @@ class _MyHomePageState extends State<MyHomePage> {
         _isLoading = false;
         _messages.insert(0, ChatMessage(text: aiResponse, isUser: false));
 
-        // Limit messages to prevent memory issues
         if (_messages.length > 50) {
           _messages.removeRange(50, _messages.length);
         }
@@ -293,7 +287,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  /// Scrolls to bottom of chat
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -306,7 +299,6 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  /// Clears current conversation
   Future<void> _clearCurrentConversation() async {
     if (_currentConversation != null) {
       setState(() {
@@ -365,7 +357,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  /// Builds the app bar
   PreferredSizeWidget _buildAppBar(ColorScheme colorScheme) {
     return AppBar(
       title: Text(
@@ -377,14 +368,12 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  /// Builds the navigation drawer
   Widget _buildDrawer(ColorScheme colorScheme) {
     return Drawer(
       backgroundColor: colorScheme.surface,
       width: MediaQuery.of(context).size.width * 0.85,
       child: Column(
         children: [
-          // Drawer Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(24, 50, 24, 20),
@@ -393,15 +382,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  colorScheme.primaryContainer,
-                  colorScheme.primary.withOpacity(0.1),
+                  colorScheme.primaryContainer.withOpacity(0.3),
+                  colorScheme.primaryContainer.withOpacity(0.1),
                 ],
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.auto_awesome, size: 48, color: colorScheme.primary),
+                Icon(Icons.auto_awesome_outlined, size: 48, color: colorScheme.primary),
                 const SizedBox(height: 12),
                 Text(
                   'AskPitra',
@@ -420,7 +409,6 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
 
-          // New Chat Button
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: SizedBox(
@@ -432,16 +420,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
                   foregroundColor: colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 32),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(32),
                   ),
                 ),
               ),
             ),
           ),
 
-          // Conversations List
           Expanded(
             child: _conversations.isEmpty
                 ? Center(
@@ -465,7 +452,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: _conversations.length,
                     itemBuilder: (context, index) {
                       final conversation = _conversations[index];
@@ -478,8 +465,12 @@ class _MyHomePageState extends State<MyHomePage> {
                           color: isSelected
                               ? colorScheme.primaryContainer.withOpacity(0.3)
                               : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(15),
                           child: ListTile(
+                            contentPadding: const EdgeInsets.only(
+                              left: 16,
+                              right: 4,
+                            ),
                             leading: Icon(
                               Icons.chat_outlined,
                               color: isSelected
@@ -508,6 +499,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               ),
                             ),
                             trailing: PopupMenuButton(
+                              padding: EdgeInsets.zero,
                               icon: Icon(
                                 Icons.more_vert,
                                 color: colorScheme.onSurface.withOpacity(0.6),
@@ -538,7 +530,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                             onTap: () => _switchConversation(conversation),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(15),
                             ),
                           ),
                         ),
@@ -546,11 +538,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     },
                   ),
           ),
-
-          // Settings Section
           const Divider(),
 
-          // Theme Toggle in Sidebar
           ListTile(
             leading: Icon(
               widget.isDarkMode ? Icons.dark_mode : Icons.light_mode,
@@ -584,7 +573,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  /// Shows delete conversation confirmation dialog
   void _showDeleteConversationDialog(Conversation conversation) {
     Future.delayed(Duration.zero, () {
       showDialog(
@@ -615,7 +603,6 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  /// Formats date for display
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
@@ -631,14 +618,13 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  /// Shows about dialog
   void _showAboutDialog(BuildContext context, ColorScheme colorScheme) {
     showAboutDialog(
       context: context,
       applicationName: 'AskPitra',
       applicationVersion: '1.0.0',
       applicationIcon: Icon(
-        Icons.auto_awesome,
+        Icons.auto_awesome_outlined,
         size: 48,
         color: colorScheme.primary,
       ),
@@ -655,7 +641,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  /// Builds the chat list
   Widget _buildChatList(ColorScheme colorScheme) {
     return ListView.builder(
       controller: _scrollController,

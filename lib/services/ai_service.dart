@@ -9,16 +9,13 @@ class AIService {
   static const String _baseUrl =
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
 
-  /// Generates AI response based on user input and conversation history
   static Future<String> generateResponse(
     String userInput,
     List<ChatMessage> messages,
   ) async {
     try {
-      // Check if we can answer from knowledge base first
       String? directAnswer = _tryDirectAnswer(userInput);
 
-      // Enhance the input with relevant knowledge from the knowledge base
       String enhancedInput = KnowledgeBase.enhancePromptWithKnowledge(
         userInput,
       );
@@ -26,7 +23,6 @@ class AIService {
       final url = Uri.parse('$_baseUrl?key=$_apiKey');
       final headers = {'Content-Type': 'application/json'};
 
-      // Prepare conversation history (limit to last 6 messages for better context)
       List<Map<String, dynamic>> previousMessages = [];
       int messageLimit = messages.length > 6 ? 6 : messages.length;
 
@@ -39,7 +35,6 @@ class AIService {
         });
       }
 
-      // Add current enhanced input
       previousMessages.add({
         "parts": [
           {"text": enhancedInput},
@@ -92,7 +87,6 @@ class AIService {
               data['candidates'][0]['content']['parts'][0]['text'] ??
               'Maaf, saya tidak dapat memproses permintaan Anda saat ini.';
 
-          // Post-process the response to ensure UPITRA context
           return _postProcessResponse(aiResponse, userInput);
         }
         return 'Maaf, saya tidak dapat memahami respons AI.';
@@ -109,11 +103,9 @@ class AIService {
     }
   }
 
-  /// Try to answer simple queries directly from knowledge base
   static String? _tryDirectAnswer(String userInput) {
     String lowerInput = userInput.toLowerCase().trim();
 
-    // Simple greeting responses
     if (lowerInput.contains('halo') ||
         lowerInput.contains('hai') ||
         lowerInput.contains('hello') ||
@@ -121,7 +113,6 @@ class AIService {
       return 'Halo! Saya AskPitra, asisten AI untuk membantu Anda mengetahui informasi tentang UPITRA (Universitas Pignatelli Triputra). Ada yang bisa saya bantu?';
     }
 
-    // Quick info responses
     if (lowerInput.contains('apa itu upitra') ||
         lowerInput.contains('tentang upitra')) {
       return KnowledgeBase.getKnowledgeByKey('upitra');
@@ -130,7 +121,6 @@ class AIService {
     return null;
   }
 
-  /// Enhanced system prompt with better context
   static String _getEnhancedSystemPrompt() {
     return '''
 Anda adalah AskPitra, asisten AI khusus untuk UPITRA (Universitas Pignatelli Triputra). 
@@ -160,19 +150,15 @@ Jawab dengan antusias dan membantu, seolah-olah Anda adalah bagian dari tim admi
 ''';
   }
 
-  /// Post-process AI response to ensure quality and context
   static String _postProcessResponse(String response, String userInput) {
-    // Remove any potential harmful or inappropriate content
     response = response.trim();
 
-    // Ensure response ends properly
     if (!response.endsWith('.') &&
         !response.endsWith('!') &&
         !response.endsWith('?')) {
       response += '.';
     }
 
-    // Add helpful closing if response is very short
     if (response.length < 50 &&
         !userInput.toLowerCase().contains('halo') &&
         !userInput.toLowerCase().contains('hai')) {
@@ -183,7 +169,6 @@ Jawab dengan antusias dan membantu, seolah-olah Anda adalah bagian dari tim admi
     return response;
   }
 
-  /// Validates if the API response has the expected structure
   static bool _isValidResponse(Map<String, dynamic> data) {
     return data['candidates'] != null &&
         data['candidates'].isNotEmpty &&
@@ -193,7 +178,6 @@ Jawab dengan antusias dan membantu, seolah-olah Anda adalah bagian dari tim admi
         data['candidates'][0]['content']['parts'][0]['text'] != null;
   }
 
-  /// Returns appropriate error message based on status code
   static String _getErrorMessage(int statusCode) {
     switch (statusCode) {
       case 400:
@@ -215,12 +199,10 @@ Jawab dengan antusias dan membantu, seolah-olah Anda adalah bagian dari tim admi
     }
   }
 
-  /// Helper method to validate API key format (for debugging)
   static bool isApiKeyValid() {
     return _apiKey.isNotEmpty && _apiKey.startsWith('AIza');
   }
 
-  /// Helper method to get service status
   static Future<bool> checkServiceHealth() async {
     try {
       final response = await generateResponse(

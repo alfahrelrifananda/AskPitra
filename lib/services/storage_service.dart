@@ -6,9 +6,8 @@ import '../models/conversation.dart';
 class StorageService {
   static const String _conversationsKey = 'conversations_v2';
   static const String _storageKey =
-      'main_chat_messages'; // Keep for backward compatibility
+      'main_chat_messages';
 
-  /// Save conversations to local storage
   static Future<void> saveConversations(
     List<Conversation> conversations,
   ) async {
@@ -42,7 +41,6 @@ class StorageService {
     }
   }
 
-  /// Load conversations from local storage
   static Future<List<Conversation>> loadConversations() async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -70,7 +68,6 @@ class StorageService {
           );
         }).toList();
       } else {
-        // Check for old messages format and migrate
         final List<ChatMessage> oldMessages = await loadMessages();
         if (oldMessages.isNotEmpty) {
           final migratedConversation = Conversation(
@@ -83,14 +80,13 @@ class StorageService {
             updatedAt: oldMessages.first.timestamp,
           );
           await saveConversations([migratedConversation]);
-          await clearMessages(); // Clear old format
+          await clearMessages();
           return [migratedConversation];
         }
         return [];
       }
     } catch (e) {
       print('Error loading conversations: $e');
-      // Try to load old format as fallback
       try {
         final List<ChatMessage> oldMessages = await loadMessages();
         if (oldMessages.isNotEmpty) {
@@ -111,7 +107,6 @@ class StorageService {
     }
   }
 
-  /// Clear all conversations
   static Future<void> clearConversations() async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -121,7 +116,6 @@ class StorageService {
     }
   }
 
-  /// Loads chat messages from local storage (backward compatibility)
   static Future<List<ChatMessage>> loadMessages() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -145,7 +139,6 @@ class StorageService {
     }
   }
 
-  /// Saves chat messages to local storage (backward compatibility)
   static Future<void> saveMessages(List<ChatMessage> messages) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -166,7 +159,6 @@ class StorageService {
     }
   }
 
-  /// Clears all chat messages from local storage (backward compatibility)
   static Future<void> clearMessages() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -176,7 +168,6 @@ class StorageService {
     }
   }
 
-  /// Gets the current storage size (for debugging purposes)
   static Future<int> getStorageSize() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -189,7 +180,6 @@ class StorageService {
     }
   }
 
-  /// Gets storage information for debugging
   static Future<Map<String, dynamic>> getStorageInfo() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -210,7 +200,6 @@ class StorageService {
     }
   }
 
-  /// Export all conversations as JSON (for backup)
   static Future<String> exportConversations() async {
     try {
       final conversations = await loadConversations();
@@ -244,7 +233,6 @@ class StorageService {
     }
   }
 
-  /// Import conversations from JSON (for restore)
   static Future<void> importConversations(
     String jsonData, {
     bool merge = false,
@@ -282,7 +270,6 @@ class StorageService {
           ...importedConversations,
           ...existingConversations,
         ];
-        // Remove duplicates based on ID
         final Map<String, Conversation> uniqueConversations = {};
         for (final conversation in allConversations) {
           uniqueConversations[conversation.id] = conversation;

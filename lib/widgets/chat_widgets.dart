@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ChatWidgets {
-  /// Builds the welcome screen with suggestions
   static Widget buildWelcomeScreen(
     ColorScheme colorScheme,
     List<String> suggestions,
@@ -35,7 +34,6 @@ class ChatWidgets {
     );
   }
 
-  /// Builds the knowledge base indicator
   static Widget _buildKnowledgeIndicator(ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -65,7 +63,6 @@ class ChatWidgets {
     );
   }
 
-  /// Builds suggestion cards
   static Widget _buildSuggestionCards(
     ColorScheme colorScheme,
     List<String> suggestions,
@@ -113,7 +110,6 @@ class ChatWidgets {
     );
   }
 
-  /// Builds loading indicator
   static Widget buildLoadingIndicator(ColorScheme colorScheme) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
@@ -146,7 +142,6 @@ class ChatWidgets {
     );
   }
 
-  /// Builds input field
   static Widget buildInputField(
     BuildContext context,
     ColorScheme colorScheme,
@@ -228,7 +223,6 @@ class ChatWidgets {
     );
   }
 
-  /// Shows clear chat confirmation dialog
   static void showClearChatDialog(
     BuildContext context,
     ColorScheme colorScheme,
