@@ -77,7 +77,21 @@ class _MyAppState extends State<MyApp> {
         return MaterialApp(
           title: 'AskPitra',
           debugShowCheckedModeBanner: false,
-          theme: ThemeData(colorScheme: lightScheme, useMaterial3: true),
+
+          theme: ThemeData(
+            fontFamily: 'Poppins',
+            textTheme: const TextTheme(
+              displayLarge: TextStyle(fontFamily: 'Poppins'),
+              displayMedium: TextStyle(fontFamily: 'Poppins'),
+              displaySmall: TextStyle(fontFamily: 'Poppins'),
+              headlineLarge: TextStyle(fontFamily: 'Poppins'),
+              headlineMedium: TextStyle(fontFamily: 'Poppins'),
+              headlineSmall: TextStyle(fontFamily: 'Poppins'),
+              titleLarge: TextStyle(fontFamily: 'Poppins'),
+            ),
+            colorScheme: lightScheme,
+            useMaterial3: true,
+          ),
           darkTheme: ThemeData(colorScheme: darkScheme, useMaterial3: true),
           themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
           home: MyHomePage(
@@ -390,7 +404,11 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.auto_awesome_outlined, size: 48, color: colorScheme.primary),
+                Icon(
+                  Icons.auto_awesome_outlined,
+                  size: 48,
+                  color: colorScheme.primary,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   'AskPitra',
