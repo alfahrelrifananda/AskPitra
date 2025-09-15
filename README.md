@@ -2,6 +2,14 @@
 
 A Flutter-based AI chat application specifically designed for UPITRA (Universitas Pignatelli Triputra) with integrated knowledge base functionality.
 
+## 📱 Screenshots
+<div style="display: flex; justify-content: space-around;">
+  <img src="./assets/screenshots/ss1.jpg" alt="" width="200">
+  <img src="./assets/screenshots/ss2.jpg" alt="" width="200">
+  <img src="./assets/screenshots/ss3.jpg" alt="" width="200">
+</div>
+
+
 ## 📁 Project Structure
 
 ```
@@ -85,7 +93,8 @@ lib/
    ```
 
 5. **Configure API Key**:
-   - Update the `geminiApiKey` in `lib/constants/app_constants.dart`
+   - Create `.env` file in the root folder
+   - Insert the `GEMINI_API_KEY=(your-api-key)` in `.env`
    - Replace with your actual Google Gemini API key
 
 6. **Run the application**:
@@ -95,23 +104,11 @@ lib/
 
 ## 🔧 Configuration
 
-### API Configuration
-Edit `lib/constants/app_constants.dart`:
-- `geminiApiKey`: Your Google Gemini API key
-- `aiTemperature`: AI response creativity (0.0-1.0)
-- `maxOutputTokens`: Maximum response length
-
 ### Knowledge Base
 Edit `lib/services/knowledge_base.dart`:
 - Add new knowledge entries to `_knowledge` map
 - Update `_keywords` list for better matching
 - Modify search logic if needed
-
-### UI Customization
-Edit `lib/constants/app_constants.dart`:
-- `defaultSuggestions`: Preset questions
-- `welcomeMessage`: Welcome screen text
-- Update error messages and labels
 
 ## 🎯 Features
 
@@ -148,23 +145,6 @@ static const List<String> _keywords = [
   'your_new_keyword',
   // ... existing keywords
 ];
-```
-
-### Adding New Suggestions
-```dart
-// In lib/constants/app_constants.dart
-static const List<String> defaultSuggestions = [
-  'Your new suggestion question',
-  // ... existing suggestions
-];
-```
-
-### Modifying AI Behavior
-```dart
-// In lib/constants/app_constants.dart
-static const String systemInstruction = """
-Your custom system instruction here...
-""";
 ```
 
 ## 📱 Build and Deploy
