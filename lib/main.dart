@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'models/chat_message.dart';
 import 'models/conversation.dart';
 import 'services/ai_service.dart';
@@ -26,10 +27,31 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool _isDarkMode = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadThemePreference();
+  }
+
+  /// Loads saved theme preference from storage
+  Future<void> _loadThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    });
+  }
+
+  /// Saves theme preference to storage
+  Future<void> _saveThemePreference(bool isDarkMode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', isDarkMode);
+  }
+
   void _toggleTheme() {
     setState(() {
       _isDarkMode = !_isDarkMode;
     });
+    _saveThemePreference(_isDarkMode);
   }
 
   @override
@@ -90,8 +112,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final List<String> _suggestions = [
     'Filosofi UPITRA',
-    'Program Studi di UPITRA',
     'Nilai-Nilai UPITRA',
+    'Program Studi di UPITRA',
     'Apa visi dan misi UPITRA',
   ];
 
@@ -543,17 +565,24 @@ class _MyHomePageState extends State<MyHomePage> {
 
           // Settings Section
           const Divider(),
+
+          // Theme Toggle in Sidebar
           ListTile(
             leading: Icon(
-              Icons.settings_outlined,
+              widget.isDarkMode ? Icons.dark_mode : Icons.light_mode,
               color: colorScheme.onSurfaceVariant,
             ),
-            title: const Text('Pengaturan'),
-            onTap: () {
-              Navigator.pop(context);
-              _showSettingsDialog(context, colorScheme);
-            },
+            title: const Text('Mode Gelap'),
+            trailing: Switch(
+              value: widget.isDarkMode,
+              onChanged: (bool value) {
+                widget.onThemeToggle();
+              },
+              activeColor: colorScheme.primary,
+            ),
+            onTap: widget.onThemeToggle,
           ),
+
           ListTile(
             leading: Icon(
               Icons.info_outline,
@@ -616,42 +645,6 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
-  }
-
-  /// Shows settings dialog
-  void _showSettingsDialog(BuildContext context, ColorScheme colorScheme) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Pengaturan'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(
-                  widget.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                ),
-                title: const Text('Mode Gelap'),
-                trailing: Switch(
-                  value: widget.isDarkMode,
-                  onChanged: (bool value) {
-                    widget.onThemeToggle();
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Tutup'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   /// Shows about dialog
