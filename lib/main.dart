@@ -132,10 +132,10 @@ class _MyHomePageState extends State<MyHomePage> {
   int _selectedDrawerIndex = 0;
 
   final List<String> _suggestions = [
-    'Filosofi UPITRA',
-    'Nilai-Nilai UPITRA',
-    'Program Studi UPITRA',
-    'Visi dan misi UPITRA',
+    'Jelaskan Filosofi UPITRA',
+    'Sebutkan Nilai-Nilai UPITRA',
+    'Program Studi yang ada di UPITRA',
+    'Apa saja Visi dan misi UPITRA',
   ];
 
   @override

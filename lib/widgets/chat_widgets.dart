@@ -68,45 +68,36 @@ class ChatWidgets {
     List<String> suggestions,
     Function(String) onSuggestionTap,
   ) {
-    return Builder(
-      builder: (context) {
-        return SizedBox(
-          width: double.infinity,
-          child: Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
-            children: suggestions.map((suggestion) {
-              return Card(
-                color: colorScheme.secondaryContainer,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+    return Column(
+      children: suggestions.map((suggestion) {
+        return Card(
+          color: colorScheme.secondaryContainer,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(32),
+          ),
+          margin: const EdgeInsets.symmetric(vertical: 3, horizontal: 32),
+          child: InkWell(
+            onTap: () => onSuggestionTap(suggestion),
+            borderRadius: BorderRadius.circular(32),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+              child: Text(
+                suggestion,
+                style: TextStyle(
+                  color: colorScheme.onSecondaryContainer,
+                  fontSize: 14,
                 ),
-                child: InkWell(
-                  onTap: () => onSuggestionTap(suggestion),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    width: MediaQuery.of(context).size.width * 0.45,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Text(
-                      suggestion,
-                      style: TextStyle(
-                        color: colorScheme.onSecondaryContainer,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
         );
-      },
+      }).toList(),
     );
   }
 
@@ -151,7 +142,7 @@ class ChatWidgets {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 12.0, bottom: 12.0),
+      padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 1.0, bottom: 1.0),
       color: colorScheme.surface,
       child: SafeArea(
         child: Container(
