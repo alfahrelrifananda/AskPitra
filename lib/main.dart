@@ -134,8 +134,8 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<String> _suggestions = [
     'Filosofi UPITRA',
     'Nilai-Nilai UPITRA',
-    'Program Studi di UPITRA',
-    'Apa visi dan misi UPITRA',
+    'Program Studi UPITRA',
+    'Visi dan misi UPITRA',
   ];
 
   @override
