@@ -24,11 +24,6 @@ lib/
 - **Contains**: App configuration, main chat screen, navigation logic
 - **Dependencies**: All other modules
 
-### `lib/constants/app_constants.dart`
-- **Purpose**: Centralized configuration and constants
-- **Contains**: API keys, URLs, error messages, UI constants, default suggestions
-- **Benefits**: Easy configuration management, no hardcoded values
-
 ### `lib/models/chat_message.dart`
 - **Purpose**: Chat message data model and presentation
 - **Contains**: ChatMessage widget with rich text parsing, timestamp handling, copy functionality
