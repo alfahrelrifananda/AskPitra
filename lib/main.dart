@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'models/chat_message.dart';
+import 'models/conversation.dart';
 import 'services/ai_service.dart';
 import 'services/storage_service.dart';
 import 'widgets/chat_widgets.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
   try {
-    await dotenv.load(fileName: ".env"); // Load environment variables
+    await dotenv.load(fileName: ".env");
   } catch (e) {
-    throw Exception('Error loading .env file: $e'); // Print error if any
+    throw Exception('Error loading .env file: $e');
   }
-  runApp(const MyApp()); // Runs the app
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
@@ -82,6 +83,11 @@ class _MyHomePageState extends State<MyHomePage> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
 
+  // Conversation management
+  List<Conversation> _conversations = [];
+  Conversation? _currentConversation;
+  int _selectedDrawerIndex = 0;
+
   final List<String> _suggestions = [
     'Filosofi UPITRA',
     'Program Studi di UPITRA',
@@ -92,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _loadMessages();
+    _loadConversations();
   }
 
   @override
@@ -102,30 +108,130 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  /// Loads messages from storage
-  Future<void> _loadMessages() async {
-    final messages = await StorageService.loadMessages();
+  /// Loads all conversations from storage
+  Future<void> _loadConversations() async {
+    final conversations = await StorageService.loadConversations();
     setState(() {
-      _messages.clear();
-      _messages.addAll(messages);
+      _conversations = conversations;
+      if (_conversations.isNotEmpty) {
+        _currentConversation = _conversations.first;
+        _messages.clear();
+        _messages.addAll(_currentConversation!.messages);
+      }
     });
   }
 
-  /// Saves messages to storage
-  Future<void> _saveMessages() async {
-    await StorageService.saveMessages(_messages);
+  /// Creates a new conversation
+  Future<void> _createNewConversation() async {
+    final newConversation = Conversation(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: 'Obrolan Baru',
+      messages: [],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    setState(() {
+      _conversations.insert(0, newConversation);
+      _currentConversation = newConversation;
+      _messages.clear();
+      _selectedDrawerIndex = 0;
+    });
+
+    await StorageService.saveConversations(_conversations);
+
+    // Close drawer if open
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+  }
+
+  /// Switches to a different conversation
+  Future<void> _switchConversation(Conversation conversation) async {
+    setState(() {
+      _currentConversation = conversation;
+      _messages.clear();
+      _messages.addAll(conversation.messages);
+      _selectedDrawerIndex = 0;
+    });
+
+    // Close drawer
+    Navigator.pop(context);
+  }
+
+  /// Deletes a conversation
+  Future<void> _deleteConversation(Conversation conversation) async {
+    setState(() {
+      _conversations.remove(conversation);
+
+      if (_currentConversation?.id == conversation.id) {
+        if (_conversations.isNotEmpty) {
+          _currentConversation = _conversations.first;
+          _messages.clear();
+          _messages.addAll(_currentConversation!.messages);
+        } else {
+          _currentConversation = null;
+          _messages.clear();
+        }
+      }
+    });
+
+    await StorageService.saveConversations(_conversations);
+  }
+
+  /// Updates conversation title based on first message
+  void _updateConversationTitle(String firstMessage) {
+    if (_currentConversation != null &&
+        _currentConversation!.title == 'Obrolan Baru') {
+      final title = firstMessage.length > 30
+          ? '${firstMessage.substring(0, 30)}...'
+          : firstMessage;
+
+      setState(() {
+        _currentConversation!.title = title;
+        _currentConversation!.updatedAt = DateTime.now();
+      });
+    }
+  }
+
+  /// Saves current conversation
+  Future<void> _saveCurrentConversation() async {
+    if (_currentConversation != null) {
+      _currentConversation!.messages = List.from(_messages.reversed);
+      _currentConversation!.updatedAt = DateTime.now();
+
+      final index = _conversations.indexWhere(
+        (c) => c.id == _currentConversation!.id,
+      );
+      if (index != -1) {
+        _conversations[index] = _currentConversation!;
+      }
+
+      await StorageService.saveConversations(_conversations);
+    }
   }
 
   /// Handles message submission
-  void _handleSubmitted(String text) {
+  void _handleSubmitted(String text) async {
     if (text.trim().isEmpty) return;
+
+    // Create new conversation if none exists
+    if (_currentConversation == null) {
+      await _createNewConversation();
+    }
 
     _textController.clear();
     setState(() {
       _messages.insert(0, ChatMessage(text: text, isUser: true));
       _isLoading = true;
     });
-    _saveMessages();
+
+    // Update conversation title if it's the first message
+    if (_messages.length == 1) {
+      _updateConversationTitle(text);
+    }
+
+    await _saveCurrentConversation();
     _scrollToBottom();
 
     _generateAIResponse(text);
@@ -146,7 +252,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       });
 
-      _saveMessages();
+      await _saveCurrentConversation();
       _scrollToBottom();
     } catch (e) {
       setState(() {
@@ -160,7 +266,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         );
       });
-      _saveMessages();
+      await _saveCurrentConversation();
       _scrollToBottom();
     }
   }
@@ -178,12 +284,16 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  /// Clears all chat messages
-  Future<void> _clearChat() async {
-    await StorageService.clearMessages();
-    setState(() {
-      _messages.clear();
-    });
+  /// Clears current conversation
+  Future<void> _clearCurrentConversation() async {
+    if (_currentConversation != null) {
+      setState(() {
+        _messages.clear();
+        _currentConversation!.messages.clear();
+        _currentConversation!.updatedAt = DateTime.now();
+      });
+      await _saveCurrentConversation();
+    }
   }
 
   @override
@@ -236,16 +346,22 @@ class _MyHomePageState extends State<MyHomePage> {
   /// Builds the app bar
   PreferredSizeWidget _buildAppBar(ColorScheme colorScheme) {
     return AppBar(
-      title: Text(widget.title, style: TextStyle(color: colorScheme.onSurface)),
+      title: Text(
+        _currentConversation?.title ?? widget.title,
+        style: TextStyle(color: colorScheme.onSurface),
+      ),
       backgroundColor: colorScheme.surface,
       elevation: 0,
       actions: [
-        // Clear chat button
+        // Clear current conversation button
         IconButton(
           icon: const Icon(Icons.delete_outline),
-          onPressed: () =>
-              ChatWidgets.showClearChatDialog(context, colorScheme, _clearChat),
-          tooltip: 'Clear chat history',
+          onPressed: () => ChatWidgets.showClearChatDialog(
+            context,
+            colorScheme,
+            _clearCurrentConversation,
+          ),
+          tooltip: 'Clear current conversation',
         ),
       ],
     );
@@ -253,106 +369,253 @@ class _MyHomePageState extends State<MyHomePage> {
 
   /// Builds the navigation drawer
   Widget _buildDrawer(ColorScheme colorScheme) {
-    return NavigationDrawer(
+    return Drawer(
       backgroundColor: colorScheme.surface,
-      children: [
-        // Drawer Header
-        DrawerHeader(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                colorScheme.primaryContainer,
-                colorScheme.primary.withOpacity(0.1),
+      width: MediaQuery.of(context).size.width * 0.85,
+      child: Column(
+        children: [
+          // Drawer Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(24, 50, 24, 20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colorScheme.primaryContainer,
+                  colorScheme.primary.withOpacity(0.1),
+                ],
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline,
+                  size: 48,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'AskPitra',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'AI Assistant untuk UPITRA',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onPrimaryContainer.withOpacity(0.8),
+                  ),
+                ),
               ],
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Icon(
-                Icons.chat_bubble_outline,
-                size: 48,
-                color: colorScheme.primary,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'AskPitra',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
+
+          // New Chat Button
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _createNewConversation,
+                icon: const Icon(Icons.add),
+                label: const Text('Obrolan Baru'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
-              Text(
-                'AI Assistant untuk UPITRA',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onPrimaryContainer.withOpacity(0.8),
-                ),
+            ),
+          ),
+
+          // Conversations List
+          Expanded(
+            child: _conversations.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 64,
+                          color: colorScheme.onSurface.withOpacity(0.3),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Belum ada obrolan',
+                          style: TextStyle(
+                            color: colorScheme.onSurface.withOpacity(0.6),
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    itemCount: _conversations.length,
+                    itemBuilder: (context, index) {
+                      final conversation = _conversations[index];
+                      final isSelected =
+                          _currentConversation?.id == conversation.id;
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Material(
+                          color: isSelected
+                              ? colorScheme.primaryContainer.withOpacity(0.3)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.chat_outlined,
+                              color: isSelected
+                                  ? colorScheme.primary
+                                  : colorScheme.onSurface.withOpacity(0.6),
+                              size: 20,
+                            ),
+                            title: Text(
+                              conversation.title,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? colorScheme.primary
+                                    : colorScheme.onSurface,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(
+                              _formatDate(conversation.updatedAt),
+                              style: TextStyle(
+                                color: colorScheme.onSurface.withOpacity(0.6),
+                                fontSize: 12,
+                              ),
+                            ),
+                            trailing: PopupMenuButton(
+                              icon: Icon(
+                                Icons.more_vert,
+                                color: colorScheme.onSurface.withOpacity(0.6),
+                                size: 20,
+                              ),
+                              itemBuilder: (context) => [
+                                PopupMenuItem(
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red.shade400,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Hapus',
+                                        style: TextStyle(
+                                          color: Colors.red.shade400,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  onTap: () => _showDeleteConversationDialog(
+                                    conversation,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            onTap: () => _switchConversation(conversation),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+
+          // Settings Section
+          const Divider(),
+          ListTile(
+            leading: Icon(
+              Icons.settings_outlined,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            title: const Text('Pengaturan'),
+            onTap: () {
+              Navigator.pop(context);
+              _showSettingsDialog(context, colorScheme);
+            },
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.info_outline,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            title: const Text('Tentang Aplikasi'),
+            onTap: () {
+              Navigator.pop(context);
+              _showAboutDialog(context, colorScheme);
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  /// Shows delete conversation confirmation dialog
+  void _showDeleteConversationDialog(Conversation conversation) {
+    Future.delayed(Duration.zero, () {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Hapus Obrolan'),
+            content: Text(
+              'Apakah Anda yakin ingin menghapus obrolan "${conversation.title}"?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _deleteConversation(conversation);
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Hapus'),
               ),
             ],
-          ),
-        ),
+          );
+        },
+      );
+    });
+  }
 
-        // Navigation Items
-        NavigationDrawerDestination(
-          icon: Icon(Icons.chat_outlined, color: colorScheme.onSurfaceVariant),
-          selectedIcon: Icon(Icons.chat, color: colorScheme.primary),
-          label: const Text('Chat'),
-        ),
-        NavigationDrawerDestination(
-          icon: Icon(
-            Icons.history_outlined,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          selectedIcon: Icon(Icons.history, color: colorScheme.primary),
-          label: const Text('Riwayat Chat'),
-        ),
+  /// Formats date for display
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
 
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: Divider(),
-        ),
-
-        // Settings Section
-        ListTile(
-          leading: Icon(
-            Icons.settings_outlined,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          title: const Text('Pengaturan'),
-          onTap: () {
-            Navigator.pop(context);
-            _showSettingsDialog(context, colorScheme);
-          },
-        ),
-        ListTile(
-          leading: Icon(
-            Icons.info_outline,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          title: const Text('Tentang Aplikasi'),
-          onTap: () {
-            Navigator.pop(context);
-            _showAboutDialog(context, colorScheme);
-          },
-        ),
-        ListTile(
-          leading: Icon(
-            Icons.help_outline,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          title: const Text('Bantuan'),
-          onTap: () {
-            Navigator.pop(context);
-            _showHelpDialog(context, colorScheme);
-          },
-        ),
-
-        const SizedBox(height: 16),
-      ],
-    );
+    if (difference.inDays == 0) {
+      return 'Hari ini';
+    } else if (difference.inDays == 1) {
+      return 'Kemarin';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} hari lalu';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
   }
 
   /// Shows settings dialog
@@ -404,7 +667,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       children: [
         const Text(
-          'AskPitra adalah asisten AI yang dirancang khusus untuk membantu mahasiswa dan staf UPITRA mendapatkan informasi yang diperlukan.',
+          'AskPitra adalah asisten AI yang dirancang khusus untuk membantu mahasiswa mendapatkan informasi yang diperlukan.',
         ),
         const SizedBox(height: 16),
         const Text(
@@ -412,47 +675,6 @@ class _MyHomePageState extends State<MyHomePage> {
           style: TextStyle(fontStyle: FontStyle.italic),
         ),
       ],
-    );
-  }
-
-  /// Shows help dialog
-  void _showHelpDialog(BuildContext context, ColorScheme colorScheme) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Bantuan'),
-          content: const SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Cara Menggunakan AskPitra:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 12),
-                Text('1. Ketik pertanyaan Anda di kotak input'),
-                Text('2. Tekan tombol kirim atau Enter'),
-                Text('3. Tunggu respons dari AI'),
-                Text('4. Gunakan saran pertanyaan untuk memulai'),
-                SizedBox(height: 16),
-                Text('Tips:', style: TextStyle(fontWeight: FontWeight.bold)),
-                SizedBox(height: 8),
-                Text('• Ajukan pertanyaan yang spesifik'),
-                Text('• Gunakan bahasa Indonesia yang jelas'),
-                Text('• Jika tidak puas, coba formulasi ulang pertanyaan'),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Mengerti'),
-            ),
-          ],
-        );
-      },
     );
   }
 
