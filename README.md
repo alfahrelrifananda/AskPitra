@@ -3,6 +3,7 @@
 A Flutter-based AI chat application specifically designed for UPITRA (Universitas Pignatelli Triputra) with integrated knowledge base functionality.
 
 ## 📱 Screenshots
+
 <div style="display: flex; justify-content: space-around;">
   <img src="./assets/screenshots/ss1.jpg" alt="" width="200">
   <img src="./assets/screenshots/ss2.jpg" alt="" width="200">
