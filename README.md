@@ -17,6 +17,7 @@ lib/
 ├── main.dart                    # Application entry point and main UI
 ├── models/
 │   └── chat_message.dart        # Chat message model and UI widget
+│   └── conversation.dart        # Conversation model
 ├── services/
 │   ├── ai_service.dart          # AI/Gemini API service
 │   ├── knowledge_base.dart      # UPITRA knowledge base service
