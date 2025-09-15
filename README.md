@@ -7,8 +7,6 @@ A Flutter-based AI chat application specifically designed for UPITRA (Universita
 ```
 lib/
 ├── main.dart                    # Application entry point and main UI
-├── constants/
-│   └── app_constants.dart       # Application constants and configuration
 ├── models/
 │   └── chat_message.dart        # Chat message model and UI widget
 ├── services/
