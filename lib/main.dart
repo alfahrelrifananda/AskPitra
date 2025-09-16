@@ -1,10 +1,8 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dynamic_color/dynamic_color.dart';
-
 import 'models/chat_message.dart';
 import 'models/conversation.dart';
 import 'services/ai_service.dart';
@@ -153,12 +151,10 @@ class _MyHomePageState extends State<MyHomePage> {
   void _handleSubmitted(String text) async {
     if (text.trim().isEmpty) return;
 
-    // Create new conversation if needed
     if (_conversationManager.currentConversation == null) {
       await _conversationManager.createNewConversation();
     }
 
-    // Add user message
     _conversationManager.addMessage(ChatMessage(text: text, isUser: true));
 
     if (_conversationManager.messages.length == 1) {
