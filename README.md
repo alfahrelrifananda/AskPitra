@@ -15,16 +15,21 @@ A Flutter-based AI chat application specifically designed for UPITRA (Universita
 
 ```
 lib/
-├── main.dart                    # Application entry point and main UI
+├── main.dart                            # Application entry point and main UI
+├── managers/
+│   └── conversation_manager.dart        # To manage the conversation
 ├── models/
-│   └── chat_message.dart        # Chat message model and UI widget
-│   └── conversation.dart        # Conversation model
+│   └── chat_message.dart                # Chat message model and UI widget
+│   └── conversation.dart                # Conversation model
 ├── services/
-│   ├── ai_service.dart          # AI/Gemini API service
-│   ├── knowledge_base.dart      # UPITRA knowledge base service
-│   └── storage_service.dart     # Local storage service
+│   ├── ai_service.dart                  # AI/Gemini API service
+│   ├── knowledge_base.dart              # UPITRA knowledge base service
+│   └── storage_service.dart             # Local storage service
 └── widgets/
-    └── chat_widgets.dart        # Reusable chat UI widgets
+    └── app_drawer.dart                  # Drawer / sidebar
+    └── chat_screen.dart                 # Reusable chat screen
+    └── chat_widgets.dart                # Reusable chat UI widgets
+    └── dialog_utils.dart                # Reusable Dialog widgets
 ```
 
 ## 📋 File Descriptions
